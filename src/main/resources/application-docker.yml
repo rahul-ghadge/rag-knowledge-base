@@ -1,0 +1,14 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://postgres:5432/ragdb
+    username: raguser
+    password: ragpassword
+
+  ai:
+    openai:
+      api-key: ${OPENAI_API_KEY}
+
+logging:
+  level:
+    root: INFO
+    com.company.ragknowledgebase: INFO

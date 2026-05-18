@@ -1,0 +1,15 @@
+.git
+.gradle
+build
+out
+*.log
+logs/
+uploads/*
+!uploads/.gitkeep
+.env
+.env.*
+docker-compose.override.yml
+README.md
+*.md
+.idea
+.vscode

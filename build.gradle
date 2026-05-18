@@ -1,0 +1,134 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.4.5'
+    id 'io.spring.dependency-management' version '1.1.7'
+    id 'jacoco'
+}
+
+group = 'com.company'
+version = '1.0.0-SNAPSHOT'
+description = 'AI-Powered Knowledge Base / RAG System'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(21)
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    mavenCentral()
+    // Spring AI 1.0.0 GA is on Maven Central - no milestone repo needed
+}
+
+ext {
+    springAiVersion     = '1.0.0'
+    langchain4jVersion  = '0.36.2'
+    lombokVersion       = '1.18.36'
+    mapstructVersion    = '1.6.3'
+    testcontainersVersion = '1.20.4'
+    swaggerVersion      = '2.8.4'
+}
+
+dependencyManagement {
+    imports {
+        mavenBom "org.springframework.ai:spring-ai-bom:${springAiVersion}"
+        mavenBom "org.testcontainers:testcontainers-bom:${testcontainersVersion}"
+    }
+}
+
+dependencies {
+    // ── Spring Boot ──────────────────────────────────────────────────────────
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+    implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+    implementation 'org.springframework.boot:spring-boot-starter-jdbc'
+
+    // ── Spring AI (1.0.0 renamed artifact IDs) ───────────────────────────────
+    // Model starters:      spring-ai-starter-model-{model}
+    // Vector store starters: spring-ai-starter-vector-store-{store}
+    implementation 'org.springframework.ai:spring-ai-starter-model-openai'
+    implementation 'org.springframework.ai:spring-ai-starter-vector-store-pgvector'
+    implementation 'org.springframework.ai:spring-ai-tika-document-reader'
+    implementation 'org.springframework.ai:spring-ai-pdf-document-reader'
+
+    // ── LangChain4j ─────────────────────────────────────────────────────────
+    implementation "dev.langchain4j:langchain4j:${langchain4jVersion}"
+    implementation "dev.langchain4j:langchain4j-open-ai:${langchain4jVersion}"
+    implementation "dev.langchain4j:langchain4j-pgvector:${langchain4jVersion}"
+    implementation("dev.langchain4j:langchain4j-document-parser-apache-pdfbox:${langchain4jVersion}") {
+        exclude group: 'org.apache.pdfbox', module: 'pdfbox'
+    }
+
+    // Force PDFBox 2.x for Tika compatibility
+    implementation 'org.apache.pdfbox:pdfbox:2.0.31'
+
+    // ── PostgreSQL + pgvector ────────────────────────────────────────────────
+    runtimeOnly 'org.postgresql:postgresql'
+    implementation 'com.pgvector:pgvector:0.1.6'
+
+    // ── Flyway ───────────────────────────────────────────────────────────────
+    implementation 'org.flywaydb:flyway-core'
+    implementation 'org.flywaydb:flyway-database-postgresql'
+
+    // ── Lombok + MapStruct ───────────────────────────────────────────────────
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+    annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+    annotationProcessor "org.projectlombok:lombok-mapstruct-binding:0.2.0"
+
+    // ── Swagger / OpenAPI ────────────────────────────────────────────────────
+    implementation "org.springdoc:springdoc-openapi-starter-webmvc-ui:${swaggerVersion}"
+
+    // ── Apache Tika ──────────────────────────────────────────────────────────
+    implementation 'org.apache.tika:tika-core:2.9.2'
+    implementation 'org.apache.tika:tika-parsers-standard-package:2.9.2'
+
+    // ── Jackson ──────────────────────────────────────────────────────────────
+    implementation 'com.fasterxml.jackson.core:jackson-databind'
+    implementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310'
+
+    // ── Observability ────────────────────────────────────────────────────────
+    implementation 'io.micrometer:micrometer-registry-prometheus'
+
+    // ── Test ─────────────────────────────────────────────────────────────────
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.testcontainers:junit-jupiter'
+    testImplementation 'org.testcontainers:postgresql'
+    testImplementation 'org.mockito:mockito-core'
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+    finalizedBy jacocoTestReport
+}
+
+jacocoTestReport {
+    dependsOn test
+    reports {
+        xml.required = true
+        html.required = true
+    }
+}
+
+compileJava {
+    options.compilerArgs += [
+        '-Amapstruct.suppressGeneratorTimestamp=true',
+        '-Amapstruct.defaultComponentModel=spring'
+    ]
+}
+
+bootJar {
+    archiveFileName = 'rag-knowledge-base.jar'
+}

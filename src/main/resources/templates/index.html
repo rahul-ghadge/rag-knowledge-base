@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title th:text="${title}">RAG Knowledge Base</title>
+    <link rel="stylesheet" th:href="@{/static/css/style.css}"/>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+</head>
+<body>
+
+<div class="app-container">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-header">
+            <div class="logo">
+                <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                    <rect width="32" height="32" rx="8" fill="#6366f1"/>
+                    <path d="M8 16h16M16 8l8 8-8 8" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span class="logo-text">KnowledgeAI</span>
+            </div>
+        </div>
+
+        <nav class="sidebar-nav">
+            <button class="nav-btn active" data-tab="chat" onclick="switchTab('chat')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+                </svg>
+                Chat
+            </button>
+            <button class="nav-btn" data-tab="documents" onclick="switchTab('documents')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                    <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                Documents
+            </button>
+            <button class="nav-btn" data-tab="search" onclick="switchTab('search')">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <circle cx="11" cy="11" r="8"/>
+                    <line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                </svg>
+                Search
+            </button>
+        </nav>
+
+        <!-- Sessions list -->
+        <div class="sessions-panel" id="sessionsPanel">
+            <div class="sessions-header">
+                <span>Recent Chats</span>
+                <button class="new-chat-btn" onclick="newChat()">+</button>
+            </div>
+            <div class="sessions-list" id="sessionsList"></div>
+        </div>
+    </aside>
+
+    <!-- Main content -->
+    <main class="main-content">
+
+        <!-- ═══ CHAT TAB ═══ -->
+        <div class="tab-content active" id="tab-chat">
+            <div class="chat-header">
+                <h1>Ask Your Knowledge Base</h1>
+                <p class="subtitle">Powered by RAG — semantic retrieval + GPT-4o</p>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="welcome-message">
+                    <div class="welcome-icon">🤖</div>
+                    <h2>Welcome to your AI Knowledge Assistant</h2>
+                    <p>Upload documents and ask questions. I'll search through your knowledge base and provide accurate, cited answers.</p>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <div class="input-container">
+                    <textarea
+                        id="chatInput"
+                        placeholder="Ask anything about your uploaded documents..."
+                        rows="1"
+                        onkeydown="handleChatKeydown(event)"
+                        oninput="autoResize(this)"></textarea>
+                    <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"/>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+                        </svg>
+                    </button>
+                </div>
+                <div class="input-meta">
+                    <span id="sessionInfo">New session</span>
+                    <span>•</span>
+                    <span>GPT-4o + pgvector</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══ DOCUMENTS TAB ═══ -->
+        <div class="tab-content" id="tab-documents">
+            <div class="tab-header">
+                <h1>Document Management</h1>
+                <p class="subtitle">Upload and manage your knowledge base documents</p>
+            </div>
+
+            <!-- Upload zone -->
+            <div class="upload-zone" id="uploadZone"
+                 ondrop="handleDrop(event)"
+                 ondragover="event.preventDefault(); this.classList.add('dragover')"
+                 ondragleave="this.classList.remove('dragover')"
+                 onclick="document.getElementById('fileInput').click()">
+                <div class="upload-icon">📁</div>
+                <h3>Drop files here or click to upload</h3>
+                <p>Supports PDF, DOCX, DOC, TXT, MD (max 50MB)</p>
+                <input type="file" id="fileInput" accept=".pdf,.docx,.doc,.txt,.md"
+                       onchange="handleFileSelect(event)" style="display:none" multiple/>
+            </div>
+
+            <!-- Upload progress -->
+            <div class="upload-progress" id="uploadProgress" style="display:none">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span id="progressText">Uploading...</span>
+            </div>
+
+            <!-- Filters -->
+            <div class="doc-controls">
+                <input type="text" class="search-input" id="docSearch"
+                       placeholder="Search documents..." oninput="filterDocuments(this.value)"/>
+                <button class="btn btn-secondary" onclick="loadDocuments()">
+                    ↻ Refresh
+                </button>
+            </div>
+
+            <!-- Documents grid -->
+            <div class="documents-grid" id="documentsGrid">
+                <div class="loading-spinner">Loading documents...</div>
+            </div>
+        </div>
+
+        <!-- ═══ SEARCH TAB ═══ -->
+        <div class="tab-content" id="tab-search">
+            <div class="tab-header">
+                <h1>Semantic Search</h1>
+                <p class="subtitle">Search your knowledge base using AI-powered vector similarity</p>
+            </div>
+
+            <div class="search-container">
+                <div class="search-bar">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <input type="text" id="searchInput" placeholder="Search for anything in your documents..."
+                           onkeydown="if(event.key==='Enter') performSearch()"/>
+                    <button class="btn btn-primary" onclick="performSearch()">Search</button>
+                </div>
+                <div class="search-options">
+                    <label>Results: <input type="number" id="topK" value="5" min="1" max="20" style="width:60px"/></label>
+                    <label>Min similarity: <input type="range" id="threshold" min="0" max="100" value="70"
+                                                   oninput="document.getElementById('thresholdVal').textContent=this.value+'%'"/>
+                        <span id="thresholdVal">70%</span></label>
+                </div>
+            </div>
+
+            <div class="search-results" id="searchResults">
+                <div class="search-empty">Enter a query to search your knowledge base</div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+<!-- Toast notifications -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script th:src="@{/static/js/app.js}"></script>
+</body>
+</html>

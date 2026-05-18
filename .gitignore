@@ -1,0 +1,53 @@
+# ─── Gradle ─────────────────────────────────────────
+.gradle/
+build/
+!gradle/wrapper/gradle-wrapper.jar
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+# ─── IDE ────────────────────────────────────────────
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Spring Boot ────────────────────────────────────
+*.jar
+*.war
+*.ear
+target/
+out/
+
+# ─── Environment / Secrets ──────────────────────────
+.env
+*.env.local
+*.env.production
+application-local.yml
+application-secrets.yml
+
+# ─── Logs ───────────────────────────────────────────
+logs/
+*.log
+*.log.*
+
+# ─── Uploads ────────────────────────────────────────
+uploads/
+!uploads/.gitkeep
+
+# ─── Docker ─────────────────────────────────────────
+docker-compose.override.yml
+
+# ─── Test / Coverage ────────────────────────────────
+.jacoco/
+coverage/
+test-results/
+
+# ─── OS ─────────────────────────────────────────────
+.DS_Store
+ehthumbs.db
+desktop.ini
